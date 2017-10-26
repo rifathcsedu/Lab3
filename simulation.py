@@ -6,6 +6,7 @@ Created on Oct 12, 2016
 import network
 import link
 import threading
+import textwrap
 from time import sleep
 
 ##configuration parameters
@@ -43,10 +44,10 @@ if __name__ == '__main__':
     for t in thread_L:
         t.start()
     
-    
-    #create some send events    
-    for i in range(3):
-        client.udt_send(2, 'Sample data %d' % i)
+    str='I am expecting a lot of transfer activity from last season top six.(give the network).'
+    #create some send events
+    #print(len(str))
+    client.udt_send(2, str)
     
     
     #give the network sufficient time to transfer all packets before quitting

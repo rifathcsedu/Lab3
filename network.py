@@ -75,11 +75,14 @@ class Host:
     ## called when printing the object
     def __str__(self):
         return 'Host_%s' % (self.addr)
-       
+    def packetSegment(self, data_S):
+        print("I am a fool")   
     ## create a packet and enqueue for transmission
     # @param dst_addr: destination address for the packet
     # @param data_S: data being transmitted to the network layer
     def udt_send(self, dst_addr, data_S):
+        #print("I am fool: %s " % data_S)
+        self.packetSegment(data_S)
         p = NetworkPacket(dst_addr, data_S)
         self.out_intf_L[0].put(p.to_byte_S()) #send packets always enqueued successfully
         print('%s: sending packet "%s" out interface with mtu=%d' % (self, p, self.out_intf_L[0].mtu))
