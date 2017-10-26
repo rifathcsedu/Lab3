@@ -76,11 +76,12 @@ class Host:
     def __str__(self):
         return 'Host_%s' % (self.addr)
     def packetSegment(self, data_S):
-        print("I am a fool")   
+        print("I am a fool")
+           
     ## create a packet and enqueue for transmission
     # @param dst_addr: destination address for the packet
     # @param data_S: data being transmitted to the network layer
-    def udt_send(self, dst_addr, data_S):
+    def udt_send(self, dst_addr, data_S, linkData):
         #print("I am fool: %s " % data_S)
         self.packetSegment(data_S)
         p = NetworkPacket(dst_addr, data_S)
