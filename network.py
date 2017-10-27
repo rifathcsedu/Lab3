@@ -5,6 +5,10 @@ Created on Oct 12, 2016
 '''
 import queue
 import threading
+import math
+import random
+import textwrap
+from math import ceil
 
 
 ## wrapper class for a queue of packets
@@ -34,9 +38,34 @@ class Interface:
 class NetworkPacket:
     ## packet encoding lengths 
     dst_addr_S_length = 5
-    
     ##@param dst_addr: address of the destination host
     # @param data_S: packet payload
+    def packetSegment(self, data_S, MTU):
+        #print("I am a fool %s" %data_S)
+        length=len(data_S)
+        #print(length)
+        #print((MTU-10))
+        packet=math.ceil(length/(MTU-20))
+        #print(packet)
+        ID=random.randint(100, 200)
+        #print(ID)
+        y=MTU-20
+        lines = [data_S[i: i + y] for i in range(0, len(data_S), y)]
+        packetData=[]    
+        x=0
+        i=0
+        while i<len(lines):
+            if (i==len(lines)-1):
+                st=","+str(ID)+","+str(x)+",0,"+lines[i]  
+            else:
+                st=","+str(ID)+","+str(x)+",1,"+lines[i]
+            packetData.append(st)
+            x+=len(lines[i])
+            #print(st)
+            #print(len(st))
+            #print(len(lines[i]))
+            i+=1
+        return packetData    
     def __init__(self, dst_addr, data_S):
         self.dst_addr = dst_addr
         self.data_S = data_S
@@ -61,7 +90,13 @@ class NetworkPacket:
     
 
     
-
+class message:
+    def __init__(self,dest,id,offset,flag,MS):
+        self.ID=id
+        self.dest=dest
+        self.offset=offset
+        self.flag=flag
+        self.message=MS
 ## Implements a network host for receiving and transmitting data
 class Host:
     
@@ -71,30 +106,54 @@ class Host:
         self.in_intf_L = [Interface()]
         self.out_intf_L = [Interface()]
         self.stop = False #for thread termination
+        finalMessage=""
+        self.msg=[]
+        
     
     ## called when printing the object
     def __str__(self):
         return 'Host_%s' % (self.addr)
-    def packetSegment(self, data_S):
-        print("I am a fool")
+    
            
     ## create a packet and enqueue for transmission
     # @param dst_addr: destination address for the packet
     # @param data_S: data being transmitted to the network layer
-    def udt_send(self, dst_addr, data_S, linkData):
-        #print("I am fool: %s " % data_S)
-        self.packetSegment(data_S)
-        p = NetworkPacket(dst_addr, data_S)
-        self.out_intf_L[0].put(p.to_byte_S()) #send packets always enqueued successfully
-        print('%s: sending packet "%s" out interface with mtu=%d' % (self, p, self.out_intf_L[0].mtu))
+    def udt_send(self, dst_addr, data_S):
+        print("I am fool: %s " % self.addr)
+        data=NetworkPacket.packetSegment(self, data_S,self.out_intf_L[0].mtu)
+        for i in data:
+            p = NetworkPacket(dst_addr, i)
+            self.out_intf_L[0].put(p.to_byte_S()) #send packets always enqueued successfully
+            print('%s: sending packet "%s" out interface with mtu=%d' % (self, p, self.out_intf_L[0].mtu))
         
     ## receive packet from the network layer
     def udt_receive(self):
         pkt_S = self.in_intf_L[0].get()
+        info=str(pkt_S).split(",")
         if pkt_S is not None:
-            print('%s: received packet "%s"' % (self, pkt_S))
-       
+            print('%s: received packet "%s"' % (self, str(pkt_S)))
+            print("-----------Print-----------")
+            self.msg.append(message(int(info[0]),int(info[1]),int(info[2]),int(info[3]),info[4]))
+            
     ## thread target for the host to keep receiving data
+    def messageJoin(self):
+        st=""
+        temp=-1
+        min=100000000
+        while len(self.msg)>0:
+            i=0
+            while i<len(self.msg):
+                #print(self.msg[i].offset)
+                if(self.msg[i].offset<min):
+                    min=self.msg[i].offset
+                    temp=i
+                i+=1
+            #print("Temp: %d"%temp)
+            #print("Min: %d"%min)
+            st+=self.msg[temp].message
+            self.msg.pop(temp)
+        return st
+        
     def run(self):
         print (threading.currentThread().getName() + ': Starting')
         while True:
@@ -103,6 +162,9 @@ class Host:
             #terminate
             if(self.stop):
                 print (threading.currentThread().getName() + ': Ending')
+                if(len(self.msg)>0):
+                    m=self.messageJoin()
+                    print("\n\nFinal message:\n%s\n\n\n" %m)
                 return
         
 

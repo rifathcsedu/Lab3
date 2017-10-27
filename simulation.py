@@ -44,7 +44,7 @@ if __name__ == '__main__':
     for t in thread_L:
         t.start()
     
-    str='I am expecting a lot of transfer activity from last season top six.(give the network).'
+    str='I am expecting a lot of transfer activity from last season top six.(give the network).give the network sufficient time to transfer all packets before quitting'
     #create some send events
     #print(len(str))
     client.udt_send(2, str)
