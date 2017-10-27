@@ -6,7 +6,8 @@ Created on Oct 12, 2016
 
 import queue
 import threading
-
+from pandas.util.testing import network
+import network
 ## An abstraction of a link between router interfaces
 class Link:
     
@@ -64,9 +65,28 @@ class LinkLayer:
         
     ##transfer a packet across all links
     def transfer(self):
-        
-        for link in self.link_L:
-            link.tx_pkt()
+        table=network.Router.Load_Table()
+        source=network.NetworkPacket.getsource()
+        dest=network.NetworkPacket.getDest()
+        for i in table:
+            str1="Host_"+source
+            str2="Host_"+dest
+            if(i[0]==str1 and i[len(i)-1]==str2):
+                path=i
+                break
+        path=i
+        route=[]
+        j=0
+        while True:
+            if(j==5):
+                break
+            for link in self.link_L:
+                if(path[j]==link.from_node):
+                    route.append(link)
+                    j+=1
+                    break
+        for link in route:
+                    link.tx_pkt()        
                 
     ## thread target for the network to keep transmitting data across links
     def run(self):
