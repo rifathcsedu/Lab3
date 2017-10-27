@@ -65,7 +65,24 @@ class NetworkPacket:
             #print(len(st))
             #print(len(lines[i]))
             i+=1
-        return packetData    
+        return packetData
+    def messageJoin(msg):
+        st=""
+        temp=-1
+        min=100000000
+        while len(msg)>0:
+            i=0
+            while i<len(msg):
+                #print(self.msg[i].offset)
+                if(msg[i].offset<min):
+                    min=msg[i].offset
+                    temp=i
+                i+=1
+            #print("Temp: %d"%temp)
+            #print("Min: %d"%min)
+            st+=msg[temp].message
+            msg.pop(temp)
+        return st    
     def __init__(self, dst_addr, data_S):
         self.dst_addr = dst_addr
         self.data_S = data_S
@@ -136,24 +153,7 @@ class Host:
             self.msg.append(message(int(info[0]),int(info[1]),int(info[2]),int(info[3]),info[4]))
             
     ## thread target for the host to keep receiving data
-    def messageJoin(self):
-        st=""
-        temp=-1
-        min=100000000
-        while len(self.msg)>0:
-            i=0
-            while i<len(self.msg):
-                #print(self.msg[i].offset)
-                if(self.msg[i].offset<min):
-                    min=self.msg[i].offset
-                    temp=i
-                i+=1
-            #print("Temp: %d"%temp)
-            #print("Min: %d"%min)
-            st+=self.msg[temp].message
-            self.msg.pop(temp)
-        return st
-        
+    
     def run(self):
         print (threading.currentThread().getName() + ': Starting')
         while True:
@@ -163,7 +163,7 @@ class Host:
             if(self.stop):
                 print (threading.currentThread().getName() + ': Ending')
                 if(len(self.msg)>0):
-                    m=self.messageJoin()
+                    m=NetworkPacket.messageJoin(self.msg)
                     print("\n\nFinal message:\n%s\n\n\n" %m)
                 return
         
@@ -171,7 +171,6 @@ class Host:
 
 ## Implements a multi-interface router described in class
 class Router:
-    
     ##@param name: friendly router name for debugging
     # @param intf_count: the number of input and output interfaces 
     # @param max_queue_size: max queue length (passed to Interface)
@@ -181,6 +180,7 @@ class Router:
         #create a list of interfaces
         self.in_intf_L = [Interface(max_queue_size) for _ in range(intf_count)]
         self.out_intf_L = [Interface(max_queue_size) for _ in range(intf_count)]
+        self.msg=[]
 
     ## called when printing the object
     def __str__(self):
@@ -194,14 +194,21 @@ class Router:
             try:
                 #get packet from interface i
                 pkt_S = self.in_intf_L[i].get()
+                #info=str(pkt_S).split(",")
                 #if packet exists make a forwarding decision
                 if pkt_S is not None:
+                    #self.msg.append(message(int(info[0]),int(info[1]),int(info[2]),int(info[3]),info[4]))
                     p = NetworkPacket.from_byte_S(pkt_S) #parse a packet out
                     # HERE you will need to implement a lookup into the 
                     # forwarding table to find the appropriate outgoing interface
                     # for now we assume the outgoing interface is also i
-                    self.out_intf_L[i].put(p.to_byte_S(), True)
-                    print('%s: forwarding packet "%s" from interface %d to %d with mtu %d' \
+                    data=NetworkPacket.packetSegment(self, data_S,self.out_intf_L[i].mtu)
+                    for j in data:
+                        p = NetworkPacket(dst_addr, j)
+                        self.out_intf_L[i].put(p.to_byte_S()) #send packets always enqueued successfully
+        
+                    #self.out_intf_L[i].put(p.to_byte_S(), True)
+                        print('%s: forwarding packet "%s" from interface %d to %d with mtu %d' \
                         % (self, p, i, i, self.out_intf_L[i].mtu))
             except queue.Full:
                 print('%s: packet "%s" lost on interface %d' % (self, p, i))
