@@ -44,27 +44,55 @@ class NetworkPacket:
         #print("I am a fool %s" %data_S)
         length=len(data_S)
         #print(length)
-        #print((MTU-10))
+        #print((MTU-20))
+        y=MTU-20
         packet=math.ceil(length/(MTU-20))
         #print(packet)
-        ID=random.randint(100, 200)
-        #print(ID)
-        y=MTU-20
-        lines = [data_S[i: i + y] for i in range(0, len(data_S), y)]
-        packetData=[]    
-        x=0
-        i=0
-        while i<len(lines):
-            if (i==len(lines)-1):
-                st=","+str(ID)+","+str(x)+",0,"+lines[i]  
-            else:
-                st=","+str(ID)+","+str(x)+",1,"+lines[i]
-            packetData.append(st)
-            x+=len(lines[i])
-            #print(st)
-            #print(len(st))
-            #print(len(lines[i]))
-            i+=1
+        packetData=[]
+        if(data_S[0]!='0' and data_S[0]!='#'):
+            ID=random.randint(100, 200)
+            prev=-1    
+            x=0
+            lines = [data_S[i: i + y] for i in range(0, len(data_S), y)]
+            i=0
+            while i<len(lines):
+                if (i==len(lines)-1):
+                    st="#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]  
+                else:
+                    st="#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]
+                packetData.append(st)
+                prev=x
+                x+=len(lines[i])
+            
+                #print(st)
+                #print(len(st))
+                #print(len(lines[i]))
+                i+=1
+        else:
+            info=str(data_S).split("#")
+            add=info[0]
+            ID=int(info[1])
+            x=int(info[2])
+            prev=int(info[4])
+            data_S=info[5]
+            #print(ID)
+            lines = [data_S[i: i + y] for i in range(0, len(data_S), y)]
+            #packetData=[]
+        
+            i=0
+            while i<len(lines):
+                if (i==len(lines)-1):
+                    st=add+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]  
+                else:
+                    st=add+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]
+                packetData.append(st)
+                prev=x
+                x+=len(lines[i])
+            
+                #print(st)
+                #print(len(st))
+                #print(len(lines[i]))
+                i+=1
         return packetData
     def messageJoin(msg):
         st=""
@@ -108,12 +136,13 @@ class NetworkPacket:
 
     
 class message:
-    def __init__(self,dest,id,offset,flag,MS):
+    def __init__(self,dest,id,offset,flag,prev,MS):
         self.ID=id
         self.dest=dest
         self.offset=offset
         self.flag=flag
         self.message=MS
+        self.prev=prev
 ## Implements a network host for receiving and transmitting data
 class Host:
     
@@ -136,7 +165,7 @@ class Host:
     # @param dst_addr: destination address for the packet
     # @param data_S: data being transmitted to the network layer
     def udt_send(self, dst_addr, data_S):
-        print("I am fool: %s " % self.addr)
+        print("--------------Host %d sending-----------" %self.addr)
         data=NetworkPacket.packetSegment(self, data_S,self.out_intf_L[0].mtu)
         for i in data:
             p = NetworkPacket(dst_addr, i)
@@ -146,11 +175,11 @@ class Host:
     ## receive packet from the network layer
     def udt_receive(self):
         pkt_S = self.in_intf_L[0].get()
-        info=str(pkt_S).split(",")
+        info=str(pkt_S).split("#")
         if pkt_S is not None:
             print('%s: received packet "%s"' % (self, str(pkt_S)))
             print("-----------Print-----------")
-            self.msg.append(message(int(info[0]),int(info[1]),int(info[2]),int(info[3]),info[4]))
+            self.msg.append(message(int(info[0]),int(info[1]),int(info[2]),int(info[3]),int(info[4]),info[5]))
             
     ## thread target for the host to keep receiving data
     
@@ -189,6 +218,7 @@ class Router:
     ## look through the content of incoming interfaces and forward to
     # appropriate outgoing interfaces
     def forward(self):
+        
         for i in range(len(self.in_intf_L)):
             pkt_S = None
             try:
@@ -197,19 +227,20 @@ class Router:
                 #info=str(pkt_S).split(",")
                 #if packet exists make a forwarding decision
                 if pkt_S is not None:
+                    print("\n\n\n-----------Router-----------")
                     #self.msg.append(message(int(info[0]),int(info[1]),int(info[2]),int(info[3]),info[4]))
-                    p = NetworkPacket.from_byte_S(pkt_S) #parse a packet out
+                    #p = NetworkPacket.from_byte_S(pkt_S) #parse a packet out
                     # HERE you will need to implement a lookup into the 
                     # forwarding table to find the appropriate outgoing interface
                     # for now we assume the outgoing interface is also i
-                    data=NetworkPacket.packetSegment(self, data_S,self.out_intf_L[i].mtu)
+                    data=NetworkPacket.packetSegment(self, pkt_S,self.out_intf_L[i].mtu)
                     for j in data:
-                        p = NetworkPacket(dst_addr, j)
-                        self.out_intf_L[i].put(p.to_byte_S()) #send packets always enqueued successfully
+                        #p1 = NetworkPacket(dst_addr, j)
+                        self.out_intf_L[i].put(j) #send packets always enqueued successfully
         
                     #self.out_intf_L[i].put(p.to_byte_S(), True)
                         print('%s: forwarding packet "%s" from interface %d to %d with mtu %d' \
-                        % (self, p, i, i, self.out_intf_L[i].mtu))
+                        % (self, j, i, i, self.out_intf_L[i].mtu))
             except queue.Full:
                 print('%s: packet "%s" lost on interface %d' % (self, p, i))
                 pass

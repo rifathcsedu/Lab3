@@ -37,6 +37,7 @@ class Link:
         pkt_S = self.in_intf.get()
         if pkt_S is None:
             return #return if no packet to transfer
+        print("\n\n\n")
         if len(pkt_S) > self.out_intf.mtu:
             print('%s: packet "%s" length greater then link mtu (%d)' % (self, pkt_S, self.out_intf.mtu))
             return #return without transmitting if packet too big
@@ -63,6 +64,7 @@ class LinkLayer:
         
     ##transfer a packet across all links
     def transfer(self):
+        
         for link in self.link_L:
             link.tx_pkt()
                 
