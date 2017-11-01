@@ -17,10 +17,10 @@ if __name__ == '__main__':
     object_L = [] #keeps track of objects, so we can kill their threads
     
     #create network nodes
-    client = network.Host(1)
-    object_L.append(client)
-    server = network.Host(2)
-    object_L.append(server)
+    client1 = network.Host(1)
+    object_L.append(client1)
+    server1 = network.Host(3)
+    object_L.append(server1)
     router_a = network.Router(name='A', intf_count=1, max_queue_size=router_queue_size)
     object_L.append(router_a)
     
@@ -29,14 +29,14 @@ if __name__ == '__main__':
     object_L.append(link_layer)
     
     #add all the links
-    link_layer.add_link(link.Link(client, 0, router_a, 0, 50))
-    link_layer.add_link(link.Link(router_a, 0, server, 0, 30))
+    link_layer.add_link(link.Link(client1, 0, router_a, 0, 50))
+    link_layer.add_link(link.Link(router_a, 0, server1, 0, 30))
     
     
     #start all the objects
     thread_L = []
-    thread_L.append(threading.Thread(name=client.__str__(), target=client.run))
-    thread_L.append(threading.Thread(name=server.__str__(), target=server.run))
+    thread_L.append(threading.Thread(name=client1.__str__(), target=client1.run))
+    thread_L.append(threading.Thread(name=server1.__str__(), target=server1.run))
     thread_L.append(threading.Thread(name=router_a.__str__(), target=router_a.run))
     
     thread_L.append(threading.Thread(name="Network", target=link_layer.run))
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     str='I am expecting a lot of transfer activity from last season top six.(give the network).give the network sufficient time to transfer all packets before quitting'
     #create some send events
     #print(len(str))
-    client.udt_send(2, str)
+    client1.udt_send(3, str)
     
     
     #give the network sufficient time to transfer all packets before quitting
