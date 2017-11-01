@@ -22,7 +22,12 @@ if __name__ == '__main__':
     server1 = network.Host(3)
     object_L.append(server1)
     router_a = network.Router(name='A', intf_count=1, max_queue_size=router_queue_size)
+    router_b = network.Router(name='B', intf_count=1, max_queue_size=router_queue_size)
+    router_d = network.Router(name='D', intf_count=1, max_queue_size=router_queue_size)
+    
     object_L.append(router_a)
+    object_L.append(router_b)
+    object_L.append(router_d)
     
     #create a Link Layer to keep track of links between network nodes
     link_layer = link.LinkLayer()
@@ -30,7 +35,9 @@ if __name__ == '__main__':
     
     #add all the links
     link_layer.add_link(link.Link(client1, 0, router_a, 0, 50))
-    link_layer.add_link(link.Link(router_a, 0, server1, 0, 30))
+    link_layer.add_link(link.Link(router_a, 0, router_b, 0, 40))
+    link_layer.add_link(link.Link(router_b, 0, router_d, 0, 60))
+    link_layer.add_link(link.Link(router_d, 0, server1, 0, 30))
     
     
     #start all the objects
@@ -38,6 +45,8 @@ if __name__ == '__main__':
     thread_L.append(threading.Thread(name=client1.__str__(), target=client1.run))
     thread_L.append(threading.Thread(name=server1.__str__(), target=server1.run))
     thread_L.append(threading.Thread(name=router_a.__str__(), target=router_a.run))
+    thread_L.append(threading.Thread(name=router_b.__str__(), target=router_b.run))
+    thread_L.append(threading.Thread(name=router_d.__str__(), target=router_d.run))
     
     thread_L.append(threading.Thread(name="Network", target=link_layer.run))
     
