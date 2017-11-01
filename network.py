@@ -38,13 +38,8 @@ class Interface:
 class NetworkPacket:
     ## packet encoding lengths 
     dst_addr_S_length = 5
-    #destination=
     ##@param dst_addr: address of the destination host
     # @param data_S: packet payload
-    def getSource():
-        return self.source_addr
-    def getDest():
-        return self.dst_addr
     def packetSegment(self, data_S, MTU):
         #print("I am a fool %s" %data_S)
         length=len(data_S)
@@ -75,12 +70,11 @@ class NetworkPacket:
                 i+=1
         else:
             info=str(data_S).split("#")
-            sourceAdd=info[0]
-            Destadd=info[1]
-            ID=int(info[2])
-            x=int(info[3])
-            prev=int(info[5])
-            data_S=info[6]
+            add=info[0]
+            ID=int(info[1])
+            x=int(info[2])
+            prev=int(info[4])
+            data_S=info[5]
             #print(ID)
             lines = [data_S[i: i + y] for i in range(0, len(data_S), y)]
             #packetData=[]
@@ -88,9 +82,9 @@ class NetworkPacket:
             i=0
             while i<len(lines):
                 if (i==len(lines)-1):
-                    st=sourceAdd+"#"+Destadd+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]  
+                    st=add+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]  
                 else:
-                    st=sourceAdd+"#"+Destadd+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]
+                    st=add+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]
                 packetData.append(st)
                 prev=x
                 x+=len(lines[i])
@@ -117,9 +111,8 @@ class NetworkPacket:
             st+=msg[temp].message
             msg.pop(temp)
         return st    
-    def __init__(self, source_addr, dst_addr, data_S):
+    def __init__(self, dst_addr, data_S):
         self.dst_addr = dst_addr
-        self.source_addr = source_addr
         self.data_S = data_S
         
     ## called when printing the object
@@ -128,8 +121,7 @@ class NetworkPacket:
         
     ## convert packet to a byte string for transmission over links
     def to_byte_S(self):
-        byte_S=str(self.source_addr).zfill(self.dst_addr_S_length)
-        byte_S+="#"+str(self.dst_addr).zfill(self.dst_addr_S_length)
+        byte_S = str(self.dst_addr).zfill(self.dst_addr_S_length)
         byte_S += self.data_S
         return byte_S
     
@@ -162,23 +154,21 @@ class Host:
         self.stop = False #for thread termination
         finalMessage=""
         self.msg=[]
-        self.destination=-1
         
     
     ## called when printing the object
     def __str__(self):
         return 'Host_%s' % (self.addr)
-    object
+    
            
     ## create a packet and enqueue for transmission
     # @param dst_addr: destination address for the packet
     # @param data_S: data being transmitted to the network layer
     def udt_send(self, dst_addr, data_S):
-        
         print("--------------Host %d sending-----------" %self.addr)
         data=NetworkPacket.packetSegment(self, data_S,self.out_intf_L[0].mtu)
         for i in data:
-            p = NetworkPacket(self.addr,dst_addr, i)
+            p = NetworkPacket(dst_addr, i)
             self.out_intf_L[0].put(p.to_byte_S()) #send packets always enqueued successfully
             print('%s: sending packet "%s" out interface with mtu=%d' % (self, p, self.out_intf_L[0].mtu))
         
@@ -220,18 +210,11 @@ class Router:
         self.in_intf_L = [Interface(max_queue_size) for _ in range(intf_count)]
         self.out_intf_L = [Interface(max_queue_size) for _ in range(intf_count)]
         self.msg=[]
-        self.routingTable=[[]]
 
     ## called when printing the object
     def __str__(self):
         return 'Router_%s' % (self.name)
-    def Load_Table():
-        Table=[[]]
-        Table.append({'Host_1','Router_A','Router_B','Router_D','Host_3'})
-        Table.append({'Host_1','Router_A','Router_B','Router_D','Host_4'})
-        Table.append({'Host_2','Router_A','Router_C','Router_D','Host_3'})
-        Table.append({'Host_2','Router_A','Router_C','Router_D','Host_4'})
-        return Table
+
     ## look through the content of incoming interfaces and forward to
     # appropriate outgoing interfaces
     def forward(self):
@@ -264,7 +247,6 @@ class Router:
                 
     ## thread target for the host to keep forwarding data
     def run(self):
-        #self.Load_Table()
         print (threading.currentThread().getName() + ': Starting')
         while True:
             self.forward()
