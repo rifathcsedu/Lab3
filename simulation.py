@@ -11,7 +11,7 @@ from time import sleep
 
 ##configuration parameters
 router_queue_size = 0 #0 means unlimited
-simulation_time = 3 #give the network sufficient time to transfer all packets before quitting
+simulation_time = 5 #give the network sufficient time to transfer all packets before quitting
 
 if __name__ == '__main__':
     object_L = [] #keeps track of objects, so we can kill their threads
@@ -28,9 +28,9 @@ if __name__ == '__main__':
     object_L.append(server2)
     Router_a_Table={'2':['1:0','2:1']}
     router_a = network.Router(name='A', intf_count=2, max_queue_size=router_queue_size,routingTable=Router_a_Table)
-    Router_b_Table={'2':['3:0']}
+    Router_b_Table={'2':['3:0','4:0']}
     router_b = network.Router(name='B', intf_count=1, max_queue_size=router_queue_size,routingTable=Router_b_Table)
-    Router_c_Table={'2':['3:0']}
+    Router_c_Table={'2':['3:0','4:0']}
     router_c = network.Router(name='C', intf_count=1, max_queue_size=router_queue_size,routingTable=Router_c_Table)
     Router_d_Table={'2':['3:0','4:1']}
     router_d = network.Router(name='D', intf_count=2, max_queue_size=router_queue_size,routingTable=Router_d_Table)
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     thread_L.append(threading.Thread(name=client1.__str__(), target=client1.run))
     thread_L.append(threading.Thread(name=client2.__str__(), target=client2.run))
     
-    #thread_L.append(threading.Thread(name=server1.__str__(), target=server1.run))
+    thread_L.append(threading.Thread(name=server1.__str__(), target=server1.run))
     thread_L.append(threading.Thread(name=router_a.__str__(), target=router_a.run))
     thread_L.append(threading.Thread(name=router_b.__str__(), target=router_b.run))
     thread_L.append(threading.Thread(name=router_c.__str__(), target=router_c.run))
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     str='I am expecting a lot of transfer activity from last season top six.(give the network).give the network sufficient time to transfer all packets before quitting'
     #create some send events
     #print(len(str))
-    client1.udt_send(4, str)
+    client1.udt_send(3, str)
     
     
     #give the network sufficient time to transfer all packets before quitting

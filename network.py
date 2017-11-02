@@ -37,7 +37,7 @@ class Interface:
 # the fields necessary for the completion of this assignment.
 class NetworkPacket:
     ## packet encoding lengths 
-    dst_addr_S_length = 5
+    dst_addr_S_length = 2
     ##@param dst_addr: address of the destination host
     # @param data_S: packet payload
     def packetSegment(self, data_S, MTU):
@@ -71,10 +71,11 @@ class NetworkPacket:
         else:
             info=str(data_S).split("#")
             add=info[0]
-            ID=int(info[1])
-            x=int(info[2])
-            prev=int(info[4])
-            data_S=info[5]
+            dst=info[1]
+            ID=int(info[2])
+            x=int(info[3])
+            prev=int(info[5])
+            data_S=info[6]
             #print(ID)
             lines = [data_S[i: i + y] for i in range(0, len(data_S), y)]
             #packetData=[]
@@ -82,9 +83,9 @@ class NetworkPacket:
             i=0
             while i<len(lines):
                 if (i==len(lines)-1):
-                    st=add+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]  
+                    st=add+"#"+dst+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]  
                 else:
-                    st=add+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]
+                    st=add+"#"+dst+"#"+str(ID)+"#"+str(x)+"#0#"+str(prev)+"#"+lines[i]
                 packetData.append(st)
                 prev=x
                 x+=len(lines[i])
@@ -116,12 +117,11 @@ class NetworkPacket:
         self.data_S = data_S
         
     ## called when printing the object
-    def __str__(self):
-        return self.to_byte_S()
-        
+       
     ## convert packet to a byte string for transmission over links
-    def to_byte_S(self):
-        byte_S = str(self.dst_addr).zfill(self.dst_addr_S_length)
+    def to_byte_S(self,addr):
+        byte_S=str(addr).zfill(self.dst_addr_S_length)
+        byte_S += "#"+str(self.dst_addr).zfill(self.dst_addr_S_length)
         byte_S += self.data_S
         return byte_S
     
@@ -136,13 +136,14 @@ class NetworkPacket:
 
     
 class message:
-    def __init__(self,dest,id,offset,flag,prev,MS):
+    def __init__(self,source,dest,id,offset,flag,prev,MS):
         self.ID=id
         self.dest=dest
         self.offset=offset
         self.flag=flag
         self.message=MS
         self.prev=prev
+        self.source=source
 ## Implements a network host for receiving and transmitting data
 class Host:
     
@@ -169,7 +170,7 @@ class Host:
         data=NetworkPacket.packetSegment(self, data_S,self.out_intf_L[0].mtu)
         for i in data:
             p = NetworkPacket(dst_addr, i)
-            self.out_intf_L[0].put(p.to_byte_S()) #send packets always enqueued successfully
+            self.out_intf_L[0].put(p.to_byte_S(self.addr)) #send packets always enqueued successfully
             print('%s: sending packet "%s" out interface with mtu=%d' % (self, p, self.out_intf_L[0].mtu))
         
     ## receive packet from the network layer
@@ -179,7 +180,7 @@ class Host:
         if pkt_S is not None:
             print('%s: received packet "%s"' % (self, str(pkt_S)))
             print("-----------Print-----------")
-            self.msg.append(message(int(info[0]),int(info[1]),int(info[2]),int(info[3]),int(info[4]),info[5]))
+            self.msg.append(message(int(info[0]),int(info[1]),int(info[2]),int(info[3]),int(info[4]),int(info[5]),info[6]))
             
     ## thread target for the host to keep receiving data
     
@@ -210,7 +211,7 @@ class Router:
         self.in_intf_L = [Interface(max_queue_size) for _ in range(intf_count)]
         self.out_intf_L = [Interface(max_queue_size) for _ in range(intf_count)]
         self.msg=[]
-
+        self.RoutingTable=routingTable
     ## called when printing the object
     def __str__(self):
         return 'Router_%s' % (self.name)
@@ -218,7 +219,7 @@ class Router:
     ## look through the content of incoming interfaces and forward to
     # appropriate outgoing interfaces
     def forward(self):
-        
+        #print(self.RoutingTable['2'][0])
         for i in range(len(self.in_intf_L)):
             pkt_S = None
             try:
@@ -236,11 +237,33 @@ class Router:
                     data=NetworkPacket.packetSegment(self, pkt_S,self.out_intf_L[i].mtu)
                     for j in data:
                         #p1 = NetworkPacket(dst_addr, j)
-                        self.out_intf_L[i].put(j) #send packets always enqueued successfully
+                        info=str(j).split("#")
+                        if(self.name=='A'):
+                            k=0
+                            while k<len(self.RoutingTable['2']):
+                                info1=str(self.RoutingTable['2'][k]).split(":")
+                                if(int(info1[0])==int(info[0])):
+                                    self.out_intf_L[int(info1[1])].put(j)
+                                    print('%s: forwarding packet "%s" from interface %d to %d with mtu %d' \
+                        % (self, j, int(info1[1]), int(info1[1]), self.out_intf_L[int(info1[1])].mtu))
+                                    break
+                                k+=1
+                        else:
+                            k=0
+                            while k<len(self.RoutingTable['2']):
+                                info1=str(self.RoutingTable['2'][k]).split(":")
+                                print(info1[0])
+                                if(int(info1[0])==int(info[1])):
+                                    self.out_intf_L[int(info1[1])].put(j)
+                                    print('%s: forwarding packet "%s" from interface %d to %d with mtu %d' \
+                        % (self, j, int(info1[1]), int(info1[1]), self.out_intf_L[int(info1[1])].mtu))
+                                    break
+                                k+=1
+                                                          
+                         #send packets always enqueued successfully
         
                     #self.out_intf_L[i].put(p.to_byte_S(), True)
-                        print('%s: forwarding packet "%s" from interface %d to %d with mtu %d' \
-                        % (self, j, i, i, self.out_intf_L[i].mtu))
+                        
             except queue.Full:
                 print('%s: packet "%s" lost on interface %d' % (self, p, i))
                 pass
