@@ -70,11 +70,17 @@ if __name__ == '__main__':
     
     for t in thread_L:
         t.start()
-    
+    print("I set default string in the code. You can change\n")
     str='I am expecting a lot of transfer activity from last season top six.(give the network).give the network sufficient time to transfer all packets before quitting'
     #create some send events
     #print(len(str))
-    client1.udt_send(3, str)
+    source = input("Source: \nPress 1 for Host1\nPress 2 for Host2\n: ")
+    dest = input("Destination: \nPress 3 for Host3\nPress 4 for Host4\n: ")
+    print("%s %s"%(source,dest))
+    if(source=='1'):
+        client1.udt_send(int(dest), str)
+    if(source=='2'):
+        client2.udt_send(int(dest), str)
     
     
     #give the network sufficient time to transfer all packets before quitting

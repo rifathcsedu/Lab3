@@ -195,7 +195,7 @@ class Host:
                 print("Message Length %d \n"%len(self.msg))
                 if(len(self.msg)>0):
                     m=NetworkPacket.messageJoin(self.msg)
-                    print("\n\nFinal message Host- %d got:\n%s\n\n\n" %(self.addr,m))
+                    print("\nFinal message Host- %d got:\n%s\n\n" %(self.addr,m))
                 return
         
 
@@ -229,7 +229,7 @@ class Router:
                 #info=str(pkt_S).split(",")
                 #if packet exists make a forwarding decision
                 if pkt_S is not None:
-                    print("\n\n\n-----------Router-----------")
+                    #print("\n\n\n-----------Router-----------")
                     #self.msg.append(message(int(info[0]),int(info[1]),int(info[2]),int(info[3]),info[4]))
                     #p = NetworkPacket.from_byte_S(pkt_S) #parse a packet out
                     # HERE you will need to implement a lookup into the 
