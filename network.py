@@ -192,6 +192,7 @@ class Host:
             #terminate
             if(self.stop):
                 print (threading.currentThread().getName() + ': Ending')
+                print("Message Length %d \n"%len(self.msg))
                 if(len(self.msg)>0):
                     m=NetworkPacket.messageJoin(self.msg)
                     print("\n\nFinal message Host- %d got:\n%s\n\n\n" %(self.addr,m))
