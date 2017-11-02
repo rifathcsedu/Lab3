@@ -193,7 +193,7 @@ class Host:
                 print (threading.currentThread().getName() + ': Ending')
                 if(len(self.msg)>0):
                     m=NetworkPacket.messageJoin(self.msg)
-                    print("\n\nFinal message:\n%s\n\n\n" %m)
+                    print("\n\nFinal message Host- %d got:\n%s\n\n\n" %(self.addr,m))
                 return
         
 
@@ -203,7 +203,7 @@ class Router:
     ##@param name: friendly router name for debugging
     # @param intf_count: the number of input and output interfaces 
     # @param max_queue_size: max queue length (passed to Interface)
-    def __init__(self, name, intf_count, max_queue_size):
+    def __init__(self, name, intf_count, max_queue_size,routingTable):
         self.stop = False #for thread termination
         self.name = name
         #create a list of interfaces
